@@ -26,7 +26,7 @@ def run_research(mode="synthetic", outdir="results", focus="SPY"):
     _,_,load,evr=pca_summary(X); load.to_csv(out/"pca_loadings.csv"); evr.to_csv(out/"pca_variance.csv")
     rolling=rolling_ols(excess[focus],X,60); rolling.to_csv(out/"rolling_exposures.csv")
     stability_metrics(rolling).to_csv(out/"parameter_stability.csv",index=False)
-    wf=walk_forward(excess[focus],X,84,12,12); wf.to_csv(out/"walk_forward.csv",index=False)
+    wf=walk_forward(excess[focus],X,84,12,12,horizon=1); wf.to_csv(out/"walk_forward.csv",index=False)
     _plots(out, pd.DataFrame(summary), rolling, evr, wf, focus)
     _dashboard(out, pd.DataFrame(summary), rolling, evr, wf, focus, mode)
     metrics={
@@ -45,13 +45,13 @@ def _plots(out, summary, rolling, evr, wf, focus):
     fig,ax=plt.subplots(figsize=(10,5)); ax.barh(s.ticker,s.alpha_annualized*100); ax.axvline(0,lw=1); ax.set_xlabel("Annualized alpha (%)"); ax.set_title("HAC-adjusted factor alpha estimates"); fig.tight_layout(); fig.savefig(out/"figures/alpha_cross_section.png",dpi=160); plt.close(fig)
     fig,ax=plt.subplots(figsize=(10,5)); rolling.drop(columns="alpha").plot(ax=ax); ax.set_title(f"60-month rolling factor exposures: {focus}"); ax.set_ylabel("Beta"); fig.tight_layout(); fig.savefig(out/"figures/rolling_betas.png",dpi=160); plt.close(fig)
     fig,ax=plt.subplots(figsize=(8,4)); (evr.cumsum()*100).plot(marker="o",ax=ax); ax.set_ylabel("Cumulative explained variance (%)"); ax.set_title("PCA factor-space compression"); fig.tight_layout(); fig.savefig(out/"figures/pca_variance.png",dpi=160); plt.close(fig)
-    fig,ax=plt.subplots(figsize=(8,4)); wf.groupby("model").oos_r2.mean().plot(kind="bar",ax=ax); ax.axhline(0,lw=1); ax.set_ylabel("Mean OOS R²"); ax.set_title(f"Walk-forward validation: {focus}"); fig.tight_layout(); fig.savefig(out/"figures/oos_r2.png",dpi=160); plt.close(fig)
+    fig,ax=plt.subplots(figsize=(8,4)); wf.groupby("model").oos_r2.mean().plot(kind="bar",ax=ax); ax.axhline(0,lw=1); ax.set_ylabel("Mean OOS R²"); ax.set_title(f"1-month-ahead walk-forward forecast: {focus}"); fig.tight_layout(); fig.savefig(out/"figures/oos_r2.png",dpi=160); plt.close(fig)
 
 
 def _dashboard(out, summary, rolling, evr, wf, focus, mode):
     import plotly.express as px, plotly.graph_objects as go
     from plotly.subplots import make_subplots
-    fig=make_subplots(rows=2,cols=2,subplot_titles=("Annualized alpha","Rolling betas","PCA cumulative variance","Walk-forward OOS R²"))
+    fig=make_subplots(rows=2,cols=2,subplot_titles=("Annualized alpha","Rolling betas","PCA cumulative variance","1-month-ahead OOS R²"))
     s=summary.sort_values("alpha_annualized")
     fig.add_trace(go.Bar(x=s.ticker,y=s.alpha_annualized*100,name="Alpha %"),1,1)
     for c in [x for x in rolling.columns if x!="alpha"]: fig.add_trace(go.Scatter(x=rolling.index,y=rolling[c],name=c,showlegend=False),1,2)
