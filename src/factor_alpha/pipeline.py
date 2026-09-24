@@ -19,7 +19,14 @@ def run_research(mode="synthetic", outdir="results", focus="SPY"):
         a=fit.params["const"]; ta=fit.tvalues["const"]; pa=fit.pvalues["const"]
         summary.append({"ticker":ticker,"alpha_monthly":a,"alpha_annualized":a*12,"alpha_t_hac":ta,"alpha_p_hac":pa,"r2":fit.rsquared,"adj_r2":fit.rsquared_adj,"n_obs":int(fit.nobs),"stat_sig_5pct":bool(pa<.05),"econ_meaningful_2pct":bool(abs(a*12)>=.02)})
         for k,v in fit.params.items(): coef.append({"ticker":ticker,"term":k,"coef":v,"t_hac":fit.tvalues[k],"p_hac":fit.pvalues[k]})
-    pd.DataFrame(summary).to_csv(out/"alpha_summary.csv",index=False)
+    summary_df = pd.DataFrame(summary)
+    # Cross-sectional alpha testing creates a multiple-comparisons problem.
+    # Report Benjamini-Hochberg FDR-adjusted q-values alongside nominal HAC p-values.
+    from statsmodels.stats.multitest import multipletests
+    _, qvals, _, _ = multipletests(summary_df["alpha_p_hac"].values, alpha=0.05, method="fdr_bh")
+    summary_df["alpha_q_fdr_bh"] = qvals
+    summary_df["fdr_sig_5pct"] = summary_df["alpha_q_fdr_bh"] < 0.05
+    summary_df.to_csv(out/"alpha_summary.csv",index=False)
     pd.DataFrame(coef).to_csv(out/"coefficients_hac.csv",index=False)
     vif_table(X).to_csv(out/"vif.csv",index=False)
     adf_table(pd.concat([X, excess[[focus]]],axis=1)).to_csv(out/"adf.csv",index=False)
@@ -27,12 +34,13 @@ def run_research(mode="synthetic", outdir="results", focus="SPY"):
     rolling=rolling_ols(excess[focus],X,60); rolling.to_csv(out/"rolling_exposures.csv")
     stability_metrics(rolling).to_csv(out/"parameter_stability.csv",index=False)
     wf=walk_forward(excess[focus],X,84,12,12,horizon=1); wf.to_csv(out/"walk_forward.csv",index=False)
-    _plots(out, pd.DataFrame(summary), rolling, evr, wf, focus)
-    _dashboard(out, pd.DataFrame(summary), rolling, evr, wf, focus, mode)
+    _plots(out, summary_df, rolling, evr, wf, focus)
+    _dashboard(out, summary_df, rolling, evr, wf, focus, mode)
     metrics={
       "mode":mode,"focus":focus,"start":str(common.min().date()),"end":str(common.max().date()),"n_months":len(common),"n_assets":excess.shape[1],
-      "focus_alpha_ann":float(pd.DataFrame(summary).set_index("ticker").loc[focus,"alpha_annualized"]),
-      "focus_alpha_p":float(pd.DataFrame(summary).set_index("ticker").loc[focus,"alpha_p_hac"]),
+      "focus_alpha_ann":float(summary_df.set_index("ticker").loc[focus,"alpha_annualized"]),
+      "focus_alpha_p":float(summary_df.set_index("ticker").loc[focus,"alpha_p_hac"]),
+      "focus_alpha_q_fdr_bh":float(summary_df.set_index("ticker").loc[focus,"alpha_q_fdr_bh"]),
       "mean_oos_r2_ols":float(wf[wf.model=="OLS"].oos_r2.mean()),"mean_oos_r2_ridge":float(wf[wf.model=="Ridge"].oos_r2.mean()),"mean_oos_r2_lasso":float(wf[wf.model=="Lasso"].oos_r2.mean()),
       "pc1_variance":float(evr.iloc[0]),"max_vif":float(vif_table(X).VIF.max())}
     pd.Series(metrics).to_json(out/"metrics.json",indent=2)
