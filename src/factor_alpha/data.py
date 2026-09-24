@@ -121,8 +121,14 @@ def live_panel(start="2005-01-01", end=None, tickers=None):
 
     monthly = px[available_requested].resample("ME").last().pct_change(fill_method=None).dropna(how="all")
 
-    ff5 = web.DataReader("F-F_Research_Data_5_Factors_2x3", "famafrench")[0].copy() / 100.0
-    mom = web.DataReader("F-F_Momentum_Factor", "famafrench")[0].copy() / 100.0
+    # pandas-datareader's Fama-French reader otherwise defaults to a recent window.
+    # Pass the research start date explicitly so the factor history matches the ETF sample.
+    ff5 = web.DataReader(
+        "F-F_Research_Data_5_Factors_2x3", "famafrench", start=start, end=end
+    )[0].copy() / 100.0
+    mom = web.DataReader(
+        "F-F_Momentum_Factor", "famafrench", start=start, end=end
+    )[0].copy() / 100.0
     ff5 = ff5.rename(columns={"Mkt-RF":"MKT_RF"})
     mom_col = next((c for c in mom.columns if "mom" in str(c).lower()), None)
     if mom_col is None:
