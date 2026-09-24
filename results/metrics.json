@@ -1,0 +1,15 @@
+{
+  "mode":"synthetic",
+  "focus":"SPY",
+  "start":"2000-01-31",
+  "end":"2024-12-31",
+  "n_months":300,
+  "n_assets":12,
+  "focus_alpha_ann":0.0017736654,
+  "focus_alpha_p":0.8982386374,
+  "mean_oos_r2_ols":0.7796566946,
+  "mean_oos_r2_ridge":0.7820602446,
+  "mean_oos_r2_lasso":0.7933880735,
+  "pc1_variance":0.2637435278,
+  "max_vif":1.1440301999
+}
