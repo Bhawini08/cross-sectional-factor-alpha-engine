@@ -11,10 +11,10 @@ Can conventional equity factors explain the cross-section and time variation of 
 5. **VIF** reports multicollinearity. High VIF warns that individual coefficient estimates can be unstable even when the joint model explains returns well.
 6. **ADF tests** are applied to factor and excess-return series, where stationarity is a relevant modeling assumption. Price levels are deliberately not tested inside the return model.
 7. **Rolling regressions** reveal changing exposures and parameter instability.
-8. **Walk-forward validation** uses chronological train/test windows. Scaling, regularization, and cross-validation are fitted only on each training sample, preventing look-ahead leakage.
+8. **Walk-forward forecasting** uses only lagged factor realizations to predict the next month's excess return. Chronological train/test windows are used, and scaling, regularization, and cross-validation are fitted only on each training sample. This deliberately separates contemporaneous factor attribution from genuine prediction.
 
 ## Statistical vs economic alpha
 A statistically significant alpha is an intercept distinguishable from zero given the sampling model. An economically meaningful alpha must also be large enough to matter after implementation frictions and model uncertainty. The project reports both HAC p-values and an explicit annualized magnitude flag (2% by default) instead of conflating them.
 
 ## Overfitting controls
-Chronological splits, rolling-origin evaluation, training-only preprocessing, model parsimony, Ridge/Lasso shrinkage, PCA diagnostics, and comparison against a training-mean baseline are used together. No test-period information is used to choose parameters.
+Chronological splits, one-month-ahead target alignment, rolling-origin evaluation, training-only preprocessing, model parsimony, Ridge/Lasso shrinkage, PCA diagnostics, and comparison against a training-mean baseline are used together. No test-period information, including contemporaneous factor realizations, is used to choose parameters or form forecasts.
