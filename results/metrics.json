@@ -1,15 +1,16 @@
 {
-  "mode":"synthetic",
+  "mode":"live",
   "focus":"SPY",
-  "start":"2000-01-31",
-  "end":"2024-12-31",
-  "n_months":300,
+  "start":"2005-02-28",
+  "end":"2026-07-31",
+  "n_months":258,
   "n_assets":12,
-  "focus_alpha_ann":0.0017736654,
-  "focus_alpha_p":0.8982386374,
-  "mean_oos_r2_ols":0.7796566946,
-  "mean_oos_r2_ridge":0.7820602446,
-  "mean_oos_r2_lasso":0.7933880735,
-  "pc1_variance":0.2637435278,
-  "max_vif":1.1440301999
+  "focus_alpha_ann":-0.0035015642,
+  "focus_alpha_p":0.0591016454,
+  "focus_alpha_q_fdr_bh":0.1418439491,
+  "mean_oos_r2_ols":-0.1618212325,
+  "mean_oos_r2_ridge":-0.1045931064,
+  "mean_oos_r2_lasso":-0.0371751979,
+  "pc1_variance":0.330042071,
+  "max_vif":1.9584702301
 }

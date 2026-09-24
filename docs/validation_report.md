@@ -1,33 +1,42 @@
 # Validation Report
 
-The repository was executed end-to-end in deterministic offline mode before packaging.
+## Final live run
 
-## Automated checks
-- `pytest`: **3 passed**
-- Sample span: **300 monthly observations** from Jan 2000 through Dec 2024
-- Universe: **12 equity ETFs**
+- Mode: **live**
+- Sample: **February 2005 to July 2026**
+- Observations: **258 monthly rows**
+- Assets: **12 ETFs**
 - Focus asset: **SPY**
+- Local automated tests: **3 passed** on the final code path
 
-## Diagnostic sanity checks
-- SPY synthetic-fixture annualized alpha: **0.18%**, HAC p-value **0.898**. The engine correctly avoids falsely labeling a near-zero simulated alpha as significant.
-- Maximum factor VIF: **1.14**, consistent with the fixture's intentionally modest factor correlation.
-- ADF tests reject a unit root at 5% for all six factors and SPY excess returns in the validation fixture.
-- First principal component explains **26.4%** of standardized factor variance, so the factor space is not spuriously collapsed into one dominant component.
+## Core checks
 
-## Walk-forward validation
-Mean rolling-origin OOS R² against the training-mean baseline:
-- OLS: **0.780**
-- Ridge: **0.782**
-- Lasso: **0.793**
+SPY annualized alpha is **-0.35%**, with HAC p-value **0.059** and Benjamini-Hochberg q-value **0.142**.
 
-These values are expected to be high because the offline fixture is generated from a known factor structure. Their purpose is to verify that chronological slicing, preprocessing, model fitting, and scoring behave correctly. They are **not investment results**.
+Maximum factor VIF is **1.96**, below levels normally associated with severe multicollinearity.
 
-## Visual QA
-Generated charts were manually inspected for legibility and consistency:
-- cross-sectional annualized alpha
-- 60-month rolling factor betas
-- PCA cumulative explained variance
-- walk-forward OOS R²
+ADF tests reject a unit root at 5% for MKT_RF, SMB, HML, RMW, CMA, MOM, and SPY excess returns.
 
-## Production-mode caveat
-`--mode live` uses Yahoo Finance and the Kenneth R. French Data Library and therefore requires internet access. The offline validation environment used here blocks outbound Python network calls, so live market results should be regenerated in GitHub Actions or a normal local environment before treating any empirical findings as research evidence.
+PC1 explains **33.0%** of standardized factor variance; the first three principal components explain approximately **75.7%**.
+
+## One-month-ahead walk-forward validation
+
+Mean OOS R² against a training-sample historical-mean benchmark:
+
+- OLS: **-0.162**
+- Ridge: **-0.105**
+- Lasso: **-0.037**
+
+The negative average OOS values are retained rather than optimized away. They show that the lagged factors do not provide robust next-month SPY forecasting power over the sample.
+
+## Multiple testing
+
+Nominal HAC p-values identify QQQ, IWM, and IWD at the 5% level. After Benjamini-Hochberg FDR correction across the 12 ETF alpha tests, **none remain significant at 5%**.
+
+## Leakage control
+
+The forecasting target is shifted forward one month. Test-period factor realizations are not used to predict the same month's return. Standardization and regularization selection occur only inside each training window.
+
+## Reproducibility
+
+Synthetic mode remains available as a deterministic software fixture. Production conclusions in this repository are based on the live market-data run, not the synthetic fixture.

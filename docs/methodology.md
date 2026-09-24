@@ -1,20 +1,33 @@
 # Methodology
 
 ## Research question
-Can conventional equity factors explain the cross-section and time variation of ETF excess returns, and do apparent alphas survive robust inference and genuinely out-of-sample validation?
+
+Can conventional equity factors explain the cross-section and time variation of ETF excess returns, and do apparent alphas survive robust inference, multiple-testing correction, parameter-stability analysis, and genuine out-of-sample forecasting tests?
+
+## Data
+
+Production mode uses monthly adjusted ETF returns for SPY, QQQ, IWM, IWD, IWF, XLF, XLK, XLE, XLI, XLV, XLP, and XLY, joined to the Fama-French market, size, value, profitability, investment, momentum, and risk-free series. The tracked live sample spans February 2005 through July 2026.
 
 ## Model stack
-1. **OLS** is the interpretable baseline because factor models are linear return decompositions. Coefficients map directly to exposures and the intercept maps to alpha.
-2. **Newey-West/HAC** covariance is used for inference because monthly residuals can be heteroskedastic and autocorrelated; plain OLS standard errors can overstate precision.
-3. **Ridge/Lasso** are prediction-oriented robustness checks. Ridge stabilizes correlated factor coefficients; Lasso can shrink weak exposures toward zero. They are not used to claim structural economic causality.
-4. **PCA** asks whether the six observed factors span a lower-dimensional covariance structure. It is diagnostic, not a replacement for named economic factors.
-5. **VIF** reports multicollinearity. High VIF warns that individual coefficient estimates can be unstable even when the joint model explains returns well.
-6. **ADF tests** are applied to factor and excess-return series, where stationarity is a relevant modeling assumption. Price levels are deliberately not tested inside the return model.
-7. **Rolling regressions** reveal changing exposures and parameter instability.
-8. **Walk-forward forecasting** uses only lagged factor realizations to predict the next month's excess return. Chronological train/test windows are used, and scaling, regularization, and cross-validation are fitted only on each training sample. This deliberately separates contemporaneous factor attribution from genuine prediction.
 
-## Statistical vs economic alpha
-A statistically significant alpha is an intercept distinguishable from zero given the sampling model. An economically meaningful alpha must also be large enough to matter after implementation frictions and model uncertainty. The project reports both HAC p-values and an explicit annualized magnitude flag (2% by default) instead of conflating them.
+1. **OLS** is the interpretable attribution baseline. Coefficients map directly to factor exposures and the intercept maps to alpha.
+2. **Newey-West/HAC** covariance is used for inference because monthly residuals can be heteroskedastic and autocorrelated.
+3. **Benjamini-Hochberg FDR correction** is applied across ETF alpha tests so nominal p-values are not mistaken for cross-sectional discoveries.
+4. **Ridge/Lasso** are prediction-oriented robustness checks. Ridge stabilizes correlated coefficients; Lasso can shrink weak signals toward zero.
+5. **PCA** asks whether the six observed factors occupy a lower-dimensional covariance structure. It is diagnostic rather than a replacement for named economic factors.
+6. **VIF** reports multicollinearity. High VIF would warn that individual beta estimates may be unstable even if the joint model fits well.
+7. **ADF tests** are applied to factor and excess-return series, where stationarity is relevant to the return model.
+8. **60-month rolling regressions** reveal time variation in factor exposures and parameter stability.
+9. **Walk-forward forecasting** uses factor information at month t to predict excess return at month t+1. Chronological train/test windows are used, and scaling, regularization, and cross-validation are fit only inside each training sample.
+
+## Attribution versus forecasting
+
+Contemporaneous factor regressions answer an attribution question: how much of the realized return co-movement is associated with known factor returns in the same month? They are not forecasts. The walk-forward section deliberately lags the target so that same-month factor realizations are unavailable when the forecast is formed.
+
+## Statistical versus economic alpha
+
+A statistically significant alpha is an intercept distinguishable from zero under the sampling model. An economically meaningful alpha must also be large enough to matter after implementation frictions, instability, and model risk. The project reports HAC p-values, annualized magnitude flags, and FDR-adjusted q-values separately.
 
 ## Overfitting controls
-Chronological splits, one-month-ahead target alignment, rolling-origin evaluation, training-only preprocessing, model parsimony, Ridge/Lasso shrinkage, PCA diagnostics, and comparison against a training-mean baseline are used together. No test-period information, including contemporaneous factor realizations, is used to choose parameters or form forecasts.
+
+The framework uses chronological splits, one-month-ahead target alignment, rolling-origin evaluation, training-only preprocessing, model parsimony, Ridge/Lasso shrinkage, PCA diagnostics, and a historical-mean benchmark. No test-period information is used to choose parameters or form forecasts.
